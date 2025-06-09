@@ -1,8 +1,8 @@
 {
     "schemaVersion": "1.0",
     "agentId": "agent2-pydanticai",
-    "name": "PydanticAI Agent 2",
-    "description": "Handles RAG queries with PydanticAI and ADK",
+    "name": "PydanticAI Agent 2 - Text Refinement",
+    "description": "Refines and summarizes text using PydanticAI",
     "handler": {
         "type": "http",
         "url": "http://localhost:8002/tasks/send"
@@ -10,8 +10,8 @@
     "capabilities": [
         {
             "type": "skill",
-            "name": "rag-query",
-            "description": "Executes RAG queries on local PDFs"
+            "name": "text-refinement",
+            "description": "Refines, summarizes and extracts key insights from text"
         }
     ],
     "auth": {

@@ -102,7 +102,9 @@ async def refine_text(agent: Agent, original_text: str) -> RefinementOutput:
         cleaned_word_count = len(refinement_output.cleaned_text.split())
         reduction_percentage = (
             (original_word_count - cleaned_word_count) / original_word_count
-        ) * 100  # Create a new RefinementOutput with updated word count reduction info
+        ) * 100
+        
+        # Create a new RefinementOutput with updated word count reduction info
         return RefinementOutput(
             summary=refinement_output.summary,
             key_insights=refinement_output.key_insights,
@@ -148,26 +150,29 @@ async def get_agent_card():
     }
 
 
-@app.post("/tasks/send")
-async def handle_task(request: Dict[str, Any]):
+@app.post("/tasks/send", response_model=TaskResponse)
+async def handle_task(request: TaskRequest):
     """Handle incoming A2A task requests"""
     try:
         # Extract required fields from A2A request
-        task_id = request.get("task_id")
-        messages = request.get("messages", [])
+        task_id = request.task_id
+        messages = request.messages
 
-        if not task_id or not messages:
-            raise HTTPException(
-                status_code=400, detail="Missing required fields: task_id or messages"
-            )
+        if not messages:
+            raise HTTPException(status_code=400, detail="No messages provided")
 
         # Get the last message
         last_message = messages[-1]
-        if not last_message.get("parts") or not last_message["parts"]:
+        if last_message.role != "user":
+            raise HTTPException(
+                status_code=400, detail="Last message must be from user"
+            )
+
+        if not last_message.parts:
             raise HTTPException(status_code=400, detail="No message parts found")
 
         # Extract the text content from the message
-        content = last_message["parts"][0].get("content", "")
+        content = last_message.parts[0].content
 
         if not content.strip():
             raise HTTPException(status_code=400, detail="No content to refine")
@@ -186,29 +191,29 @@ async def handle_task(request: Dict[str, Any]):
         print(f"✅ Text refinement completed successfully")
 
         # Create A2A response with JSON output
-        response_message = {
-            "role": "agent",
-            "parts": [{"content": refinement_output.model_dump_json()}],
-        }
+        response_message = Message(
+            role="agent",
+            parts=[MessagePart(content=refinement_output.model_dump_json())],
+        )
 
-        return {
-            "task_id": task_id,
-            "status": "completed",
-            "messages": [response_message],
-        }
+        return TaskResponse(
+            task_id=task_id,
+            status="completed",
+            messages=[response_message],
+        )
 
     except Exception as e:
         print(f"❌ Text refinement failed: {str(e)}")
-        error_message = {
-            "role": "agent",
-            "parts": [{"content": f"Text refinement failed: {str(e)}"}],
-        }
+        error_message = Message(
+            role="agent",
+            parts=[MessagePart(content=f"Text refinement failed: {str(e)}")],
+        )
 
-        return {
-            "task_id": request.get("task_id", "unknown"),
-            "status": "failed",
-            "messages": [error_message],
-        }
+        return TaskResponse(
+            task_id=request.task_id,
+            status="failed",
+            messages=[error_message],
+        )
 
 
 @app.get("/health")
