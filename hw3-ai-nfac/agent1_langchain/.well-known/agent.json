@@ -1,0 +1,20 @@
+{
+    "schemaVersion": "1.0",
+    "agentId": "agent1-langchain",
+    "name": "LangChain Agent 1",
+    "description": "Analyzes text inputs via LangChain LLM",
+    "handler": {
+        "type": "http",
+        "url": "http://localhost:8001/tasks/send"
+    },
+    "capabilities": [
+        {
+            "type": "skill",
+            "name": "text-analysis",
+            "description": "Performs brief text analysis"
+        }
+    ],
+    "auth": {
+        "type": "none"
+    }
+}
